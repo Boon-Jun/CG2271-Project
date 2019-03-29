@@ -1,405 +1,188 @@
-/*2E
-
- #include <Arduino.h>
- #include <avr/io.h>
- #include <FreeRTOS.h>
- #include <task.h>
- #define STACK_SIZE 200
- #define PIN_6 6
- #define PIN_7 7
- #define PIN_8 8
-
-
- void task1(void *p) {
- bool ledLighted = false;
- const TickType_t xPeriod = TickType_t( 1500 );
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
-
- for (;;) {
- if (ledLighted) {
- ledLighted = false;
- digitalWrite(PIN_6, LOW);
- } else {
- ledLighted = true;
- digitalWrite(PIN_6, HIGH);
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task2(void *p) {
- bool ledLighted = false;
- const TickType_t xPeriod = TickType_t( 2000 );
-
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
-
- for (;;) {
- if (ledLighted) {
- ledLighted = false;
- digitalWrite(PIN_7, LOW);
- } else {
- ledLighted = true;
- digitalWrite(PIN_7, HIGH);
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task3(void *p) {
- bool ledLighted = false;
- const TickType_t xPeriod = TickType_t( 4000 );
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
-
- for (;;) {
- if (ledLighted) {
- ledLighted = false;
- digitalWrite(PIN_8, LOW);
- } else {
- ledLighted = true;
- digitalWrite(PIN_8, HIGH);
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void setup() {
- pinMode(PIN_6, OUTPUT);
- pinMode(PIN_7, OUTPUT);
- pinMode(PIN_8, OUTPUT);
- }
- void loop() {
- xTaskCreate(task1,"Task1",STACK_SIZE,NULL,3, NULL);
- xTaskCreate(task2,"Task2",STACK_SIZE,NULL,2, NULL);
- xTaskCreate(task3,"Task3",STACK_SIZE,NULL,1, NULL);
- vTaskStartScheduler();
- }
-*/
-/*3
- #include <Arduino.h>
- #include <avr/io.h>
- #include <FreeRTOS.h>
- #include <task.h>
- #define STACK_SIZE 200
- #define PIN_6 6
-
- void task1(void *p) {
- int onPeriod = 0;
-
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- for (;;) {
- digitalWrite(PIN_6, HIGH);
- onPeriod = (onPeriod + 1) % 20;
- vTaskDelayUntil(&xLastWakeUpTime, onPeriod);
-
- digitalWrite(PIN_6, LOW);
- vTaskDelayUntil(&xLastWakeUpTime, 20 - onPeriod);
- }
- }
-
- void setup() {
- pinMode(PIN_6, OUTPUT);
- }
- void loop() {
- xTaskCreate(task1, "Task1", STACK_SIZE, NULL, 1, NULL);
- vTaskStartScheduler();
- }
-*/
-/*4a
- #include <Arduino.h>
- #include <avr/io.h>
- #include <FreeRTOS.h>
- #include <task.h>
- #define STACK_SIZE 200
- #define PIN_6 6
- #define PIN_7 7
- #define PIN_8 8
- #define PIN_9 9
-
- void myDelay(int ms) {
- for (int i = 0; i < ms; i++) {
- delayMicroseconds(1000);
- }
- }
-
- void task1(void *p) {
-
- const TickType_t xPeriod = TickType_t(5000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- const int TASK_WCET = 1500;
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_6, HIGH);
- myDelay(50);
- digitalWrite(PIN_6, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task2(void *p) {
- const TickType_t xPeriod = TickType_t(10000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- const int TASK_WCET = 2500;
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_7, HIGH);
- myDelay(50);
- digitalWrite(PIN_7, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task3(void *p) {
- const int TASK_WCET = 1700;
- const TickType_t xPeriod = TickType_t(10000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_8, HIGH);
- myDelay(50);
- digitalWrite(PIN_8, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task4(void *p) {
- const TickType_t xPeriod = TickType_t(20000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- const int TASK_WCET = 700;
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_9, HIGH);
- myDelay(50);
- digitalWrite(PIN_9, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void setup() {
- pinMode(PIN_6, OUTPUT);
- pinMode(PIN_7, OUTPUT);
- pinMode(PIN_8, OUTPUT);
- pinMode(PIN_9, OUTPUT);
- }
-
- void loop() {
- xTaskCreate(task1, "Task1", STACK_SIZE, NULL, 4, NULL);
- xTaskCreate(task2, "Task2", STACK_SIZE, NULL, 3, NULL);
- xTaskCreate(task3, "Task3", STACK_SIZE, NULL, 2, NULL);
- xTaskCreate(task4, "Task4", STACK_SIZE, NULL, 1, NULL);
- vTaskStartScheduler();
- }
-*/
-/*4C
-
- #include <Arduino.h>
- #include <avr/io.h>
- #include <FreeRTOS.h>
- #include <task.h>
- #define STACK_SIZE 200
- #define PIN_6 6
- #define PIN_7 7
- #define PIN_8 8
- #define PIN_9 9
-
- void myDelay(int ms) {
- for (int i = 0; i < ms; i++) {
- delayMicroseconds(1000);
- }
- }
-
- void task1(void *p) {
-
- const TickType_t xPeriod = TickType_t(5000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- const int TASK_WCET = 1500;
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_6, HIGH);
- myDelay(50);
- digitalWrite(PIN_6, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task2(void *p) {
- const TickType_t xPeriod = TickType_t(10000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- const int TASK_WCET = 2500;
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_7, HIGH);
- myDelay(50);
- digitalWrite(PIN_7, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task3(void *p) {
- const int TASK_WCET = 1700;
- const TickType_t xPeriod = TickType_t(10000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_8, HIGH);
- myDelay(50);
- digitalWrite(PIN_8, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void task4(void *p) {
- const TickType_t xPeriod = TickType_t(20000);
- TickType_t xLastWakeUpTime = xTaskGetTickCount();
- const int TASK_WCET = 700;
- while (true) {
- int count = 0;
- while (count < TASK_WCET) {
- digitalWrite(PIN_9, HIGH);
- myDelay(50);
- digitalWrite(PIN_9, LOW);
- myDelay(50);
- count += 100;
- }
- vTaskDelayUntil(&xLastWakeUpTime, xPeriod);
- }
- }
-
- void setup() {
- pinMode(PIN_6, OUTPUT);
- pinMode(PIN_7, OUTPUT);
- pinMode(PIN_8, OUTPUT);
- pinMode(PIN_9, OUTPUT);
- }
-
- void loop() {
- xTaskCreate(task1, "Task1", STACK_SIZE, NULL, 3, NULL);
- xTaskCreate(task2, "Task2", STACK_SIZE, NULL, 2, NULL);
- xTaskCreate(task3, "Task3", STACK_SIZE, NULL, 2, NULL);
- xTaskCreate(task4, "Task4", STACK_SIZE, NULL, 1, NULL);
- vTaskStartScheduler();
- }
-*/
-
-/*5B*/
-
 #include <Arduino.h>
 #include <avr/io.h>
 #include <FreeRTOS.h>
 #include <task.h>
+#include <semphr.h>
 #define STACK_SIZE 200
-#define PIN_6 6
-#define PIN_7 7
-#define PIN_8 8
-#define PIN_9 9
 
-void myDelay(int ms) {
-	for (int i = 0; i < ms; i++) {
-		delayMicroseconds(1000);
+//for shift register (front LEDs)
+#define LATCH_PIN 7
+#define CLOCK_PIN 8
+#define DATA_PIN 13
+
+//for rear LEDs
+#define REAR_LED_PIN 12
+
+QueueHandle_t leftMotorQueue = NULL;
+QueueHandle_t rightMotorQueue = NULL;
+QueueHandle_t ledQueue = NULL;
+QueueHandle_t audioQueue = NULL;
+
+void serialTask(void *p) {
+	char output = 0;
+	TickType_t xLastWakeUpTime = 0;
+	for (;;) {
+		if (Serial.available()) {
+			output = Serial.read();
+			xQueueSend(leftMotorQueue, &output, 1);
+			xQueueSend(rightMotorQueue, &output, 1);
+			xQueueSend(ledQueue, &output, 1);
+			xQueueSend(audioQueue, &output, 1);
+		}
+	}
+	vTaskDelayUntil(&xLastWakeUpTime, 50);
+}
+
+void leftMotorTask(void *p) {
+	int onPeriod = 0;
+	char output = 0;
+	int move = 0;
+	int direction = 0;
+	TickType_t xLastWakeUpTime = 0;
+	for (;;) {
+		if (xQueueReceive(leftMotorQueue, &output, 0) == pdTRUE) {
+			onPeriod = (output & B00000111) - 4;
+			move = output & B00100000;
+			direction = (output & B10000000);
+		}
+		if (!move) {
+			//bit 5 indicates no movement
+			digitalWrite(5, LOW);
+			digitalWrite(6, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 20);
+		} else if (direction) {
+			//bit 7 indicates forward turn for left wheel
+			digitalWrite(5, LOW);
+			digitalWrite(6, HIGH);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 - onPeriod);
+			digitalWrite(6, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 - onPeriod));
+		} else {
+			//bit 7 indicates backward turn for left wheel
+			digitalWrite(5, HIGH);
+			digitalWrite(6, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 + onPeriod);
+			digitalWrite(5, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 + onPeriod));
+		}
 	}
 }
 
-void function1() {
-	int count = 0;
-	const int TASK_WCET = 1500;
-	while (count < TASK_WCET) {
-		digitalWrite(PIN_6, HIGH);
-		myDelay(50);
-		digitalWrite(PIN_6, LOW);
-		myDelay(50);
-		count += 100;
+void rightMotorTask(void *p) {
+	int onPeriod = 0;
+	int direction = 0;
+	int move = 0;
+	char output;
+	TickType_t xLastWakeUpTime = 0;
+	for (;;) {
+		if (xQueueReceive(rightMotorQueue, &output, 0) == pdTRUE) {
+			onPeriod = (output & B00000111) - 4;
+			move = output & B00100000;
+			direction = (output & B01000000);
+		}
+		if (!move) {
+			//bit 5 indicates no movement
+			digitalWrite(11, LOW);
+			digitalWrite(3, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 20);
+		} else if (direction) {
+			//bit 6 indicates forward turn for right wheel
+			digitalWrite(11, HIGH);
+			digitalWrite(3, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 + onPeriod);
+			digitalWrite(11, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 + onPeriod));
+		} else {
+			//bit 6 indicates backward turn for right wheel
+			digitalWrite(11, LOW);
+			digitalWrite(3, HIGH);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 - onPeriod);
+			digitalWrite(3, LOW);
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 - onPeriod));
+		}
 	}
 }
 
-void function2() {
-	const int TASK_WCET = 2500;
-	int count = 0;
-	while (count < TASK_WCET) {
-		digitalWrite(PIN_7, HIGH);
-		myDelay(50);
-		digitalWrite(PIN_7, LOW);
-		myDelay(50);
-		count += 100;
+void ledTask(void *p) {
+	TickType_t xLastWakeTime = xTaskGetTickCount();
+	int numberToDisplay = 1;
+	char output;
+	int move = 0;
+	for (;;) {
+		if (xQueueReceive(ledQueue, &output, 0) == pdTRUE) {
+			move = output & B00100000;
+		}
+		if (move) {
+			//one front led lighted up according to numberToDisplay
+			digitalWrite(LATCH_PIN, LOW);
+			shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, numberToDisplay);
+			digitalWrite(LATCH_PIN, HIGH);
+
+			//all rear led on for 500ms
+			digitalWrite(REAR_LED_PIN, HIGH);
+			vTaskDelayUntil(&xLastWakeTime, 500);
+
+			//updates next front led to light up
+			numberToDisplay =
+					(numberToDisplay == 128) ? 1 : numberToDisplay << 1;
+
+			//all rear led off for 500ms
+			digitalWrite(REAR_LED_PIN, LOW);
+			vTaskDelayUntil(&xLastWakeTime, 500);
+		} else {
+			//all front led lighted up
+			digitalWrite(LATCH_PIN, LOW);
+			shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 255);
+			digitalWrite(LATCH_PIN, HIGH);
+
+			// all rear led on and off for 250ms each
+			digitalWrite(REAR_LED_PIN, HIGH);
+			vTaskDelayUntil(&xLastWakeTime, 250);
+			digitalWrite(REAR_LED_PIN, LOW);
+			vTaskDelayUntil(&xLastWakeTime, 250);
+		}
 	}
 }
 
-void function3() {
-	const int TASK_WCET = 1700;
-	int count = 0;
-	while (count < TASK_WCET) {
-		digitalWrite(PIN_8, HIGH);
-		myDelay(50);
-		digitalWrite(PIN_8, LOW);
-		myDelay(50);
-		count += 100;
-	}
+void audioTask(void *p) {
+
 }
 
-void function4() {
-	const int TASK_WCET = 700;
-	int count = 0;
-	while (count < TASK_WCET) {
-		digitalWrite(PIN_9, HIGH);
-		myDelay(50);
-		digitalWrite(PIN_9, LOW);
-		myDelay(50);
-		count += 100;
-	}
-}
-
-void task1(void *p) {
-	TickType_t xLastWakeUpTime = xTaskGetTickCount();
-	while (1) {
-		function1();
-		function2();
-		function4();
-		vTaskDelayUntil(&xLastWakeUpTime, 5000);
-		function1();
-		function3();
-		vTaskDelayUntil(&xLastWakeUpTime, 5000);
-		function1();
-		function2();
-		vTaskDelayUntil(&xLastWakeUpTime, 5000);
-		function1();
-		function3();
-		vTaskDelayUntil(&xLastWakeUpTime, 5000);
-	}
-}
 void setup() {
-	pinMode(PIN_6, OUTPUT);
-	pinMode(PIN_7, OUTPUT);
-	pinMode(PIN_8, OUTPUT);
-	pinMode(PIN_9, OUTPUT);
+	Serial.begin(9600);
+	//right motor
+	pinMode(11, OUTPUT);
+	pinMode(3, OUTPUT);
+	rightMotorQueue = xQueueCreate(10, sizeof(char));
+
+	//left motor
+	pinMode(5, OUTPUT);
+	pinMode(6, OUTPUT);
+	leftMotorQueue = xQueueCreate(10, sizeof(char));
+
+	//shift register(green led)
+	pinMode(LATCH_PIN, OUTPUT);
+	pinMode(CLOCK_PIN, OUTPUT);
+	pinMode(DATA_PIN, OUTPUT);
+
+	//red led
+	pinMode(REAR_LED_PIN, OUTPUT);
+	ledQueue = xQueueCreate(10, sizeof(char));
+
+	//tone
+	pinMode(4, OUTPUT);
+	audioQueue = xQueueCreate(10, sizeof(char));
 }
+
 void loop() {
-	xTaskCreate(task1, "Task1", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
+	xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
+
+	xTaskCreate(serialTask, "serial", STACK_SIZE, NULL, 2, NULL);
+
+	xTaskCreate(ledTask, "led", STACK_SIZE, NULL, 3, NULL);
+
+	//xTaskCreate(audioTask, "audio", STACK_SIZE, NULL, 1, NULL);
+
 	vTaskStartScheduler();
 }
-
