@@ -15,7 +15,7 @@
 #define REAR_LED_PIN 12
 
 //for audio buzzer
-#define AUDIO_PIN 4
+#define BUZZER_PIN 4
 
 QueueHandle_t leftMotorQueue = NULL;
 QueueHandle_t rightMotorQueue = NULL;
@@ -169,31 +169,38 @@ void ledTask(void *p) {
 }
 
 void audioTask(void *p) {
-	// notes in the melody:
-	int melody[] = {
-	NOTE_D4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4,
-	NOTE_D4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4,
-	NOTE_D4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4,
-	NOTE_G4, NOTE_G4, NOTE_FS4 };
-
-	// note durations: how long each note should be play for (in ms)
-	int noteDurations[] = { 500, 750, 250, 250, 250, 250, 250, 250, 250, 250,
-			750, 250, 250, 250, 250, 250, 250, 250, 250, 750, 250, 250, 250,
-			250, 250, 250, 750, 250, 500, 2000 };
-
-	int pauseBetweenNotes[] = { 300, 300, 500, 500, 500, 500, 250, 500, 250,
-			300, 300, 500, 500, 500, 500, 250, 500, 250, 300, 300, 500, 500,
-			500, 500, 250, 500, 250, 250, 400, 250 };
-
+	TickType_t xLastWakeTime = xTaskGetTickCount();
+	int isCompleted = 0; //completion state of challenge
 	for (;;) {
-		for (int thisNote = 0; thisNote < 30; thisNote++) {
-			tone(AUDIO_PIN, melody[thisNote], noteDurations[thisNote]);
+		if (xQueueReceive(audioQueue, &isCompleted, 1) == pdTRUE) {
+			if (!isCompleted) {
+				for (int i = 0; i < 3; i++) {
+					tone(BUZZER_PIN, 294, 200);
+					vTaskDelayUntil(&xLastWakeTime, 250);
+					tone(BUZZER_PIN, 330, 200);
+					vTaskDelayUntil(&xLastWakeTime, 300);
 
-			// to distinguish the notes, set a minimum time between them.
-			vTaskDelay(pauseBetweenNotes[thisNote]);
-
-			// stop the tone playing:
-			noTone(AUDIO_PIN);
+					for (int k = 0; k < 3; k++) {
+						tone(BUZZER_PIN, 392, 200);
+						vTaskDelayUntil(&xLastWakeTime, 300);
+					}
+					for (int j = 0; j < 2; j++) {
+						tone(BUZZER_PIN, 392, 200);
+						vTaskDelayUntil(&xLastWakeTime, 210);
+						tone(BUZZER_PIN, 392, 200);
+						vTaskDelayUntil(&xLastWakeTime, 300);
+					}
+					vTaskDelayUntil(&xLastWakeTime, 75);
+				}
+				tone(BUZZER_PIN, 392, 200);
+				vTaskDelayUntil(&xLastWakeTime, 300);
+				tone(BUZZER_PIN, 392, 200);
+				vTaskDelayUntil(&xLastWakeTime, 300);
+				tone(BUZZER_PIN, 349, 200);
+				vTaskDelayUntil(&xLastWakeTime, 2000);
+			} else {
+				tone(BUZZER_PIN, 392, 10000);
+			}
 		}
 	}
 }
@@ -221,7 +228,6 @@ void setup() {
 
 	//tone
 	audioQueue = xQueueCreate(5, sizeof(char));
-	pinMode(AUDIO_PIN, OUTPUT);
 }
 
 void loop() {
