@@ -3,6 +3,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
+#include <queue.h>
 #define STACK_SIZE 200
 
 //for shift register (front LEDs)
@@ -12,6 +13,9 @@
 
 //for rear LEDs
 #define REAR_LED_PIN 12
+
+//for audio buzzer
+#define AUDIO_PIN 4
 
 QueueHandle_t leftMotorQueue = NULL;
 QueueHandle_t rightMotorQueue = NULL;
@@ -145,7 +149,33 @@ void ledTask(void *p) {
 }
 
 void audioTask(void *p) {
+	// notes in the melody:
+	int melody[] = {
+	NOTE_D4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4,
+	NOTE_D4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4,
+	NOTE_D4, NOTE_E4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4, NOTE_G4,
+	NOTE_G4, NOTE_G4, NOTE_FS4 };
 
+	// note durations: how long each note should be play for (in ms)
+	int noteDurations[] = { 500, 750, 250, 250, 250, 250, 250, 250, 250, 250,
+			750, 250, 250, 250, 250, 250, 250, 250, 250, 750, 250, 250, 250,
+			250, 250, 250, 750, 250, 500, 2000 };
+
+	int pauseBetweenNotes[] = { 300, 300, 500, 500, 500, 500, 250, 500, 250,
+			300, 300, 500, 500, 500, 500, 250, 500, 250, 300, 300, 500, 500,
+			500, 500, 250, 500, 250, 250, 400, 250 };
+
+	for (;;) {
+		for (int thisNote = 0; thisNote < 30; thisNote++) {
+			tone(AUDIO_PIN, melody[thisNote], noteDurations[thisNote]);
+
+			// to distinguish the notes, set a minimum time between them.
+			vTaskDelay(pauseBetweenNotes[thisNote]);
+
+			// stop the tone playing:
+			noTone(AUDIO_PIN);
+		}
+	}
 }
 
 void setup() {
@@ -170,7 +200,7 @@ void setup() {
 	ledQueue = xQueueCreate(10, sizeof(char));
 
 	//tone
-	pinMode(4, OUTPUT);
+	pinMode(AUDIO_PIN, OUTPUT);
 	audioQueue = xQueueCreate(10, sizeof(char));
 }
 
@@ -182,7 +212,7 @@ void loop() {
 
 	xTaskCreate(ledTask, "led", STACK_SIZE, NULL, 3, NULL);
 
-	//xTaskCreate(audioTask, "audio", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(audioTask, "audio", STACK_SIZE, NULL, 1, NULL);
 
 	vTaskStartScheduler();
 }
