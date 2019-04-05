@@ -25,9 +25,13 @@ QueueHandle_t audioQueue = NULL;
 void serialTask(void *p) {
 	char output = 0;
 	TickType_t xLastWakeUpTime = 0;
+
 	for (;;) {
 		if (Serial.available()) {
 			output = Serial.read();
+			if (output & B00100000) {
+				xQueueReset(ledQueue);
+			}
 			xQueueSend(leftMotorQueue, &output, 1);
 			xQueueSend(rightMotorQueue, &output, 1);
 			xQueueSend(ledQueue, &output, 1);
@@ -43,9 +47,10 @@ void leftMotorTask(void *p) {
 	int move = 0;
 	int direction = 0;
 	TickType_t xLastWakeUpTime = 0;
+
 	for (;;) {
 		if (xQueueReceive(leftMotorQueue, &output, 0) == pdTRUE) {
-			onPeriod = (output & B00000111) - 4;
+			onPeriod = (output & B00001111) - 7;
 			move = output & B00100000;
 			direction = (output & B10000000);
 		}
@@ -58,16 +63,16 @@ void leftMotorTask(void *p) {
 			//bit 7 indicates forward turn for left wheel
 			digitalWrite(5, LOW);
 			digitalWrite(6, HIGH);
-			vTaskDelayUntil(&xLastWakeUpTime, 12 - onPeriod);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 + onPeriod);
 			digitalWrite(6, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 - onPeriod));
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 + onPeriod));
 		} else {
 			//bit 7 indicates backward turn for left wheel
 			digitalWrite(5, HIGH);
 			digitalWrite(6, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 12 + onPeriod);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 - onPeriod);
 			digitalWrite(5, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 + onPeriod));
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 - onPeriod));
 		}
 	}
 }
@@ -78,9 +83,10 @@ void rightMotorTask(void *p) {
 	int move = 0;
 	char output;
 	TickType_t xLastWakeUpTime = 0;
+
 	for (;;) {
 		if (xQueueReceive(rightMotorQueue, &output, 0) == pdTRUE) {
-			onPeriod = (output & B00000111) - 4;
+			onPeriod = (output & B00001111) - 7;
 			move = output & B00100000;
 			direction = (output & B01000000);
 		}
@@ -93,25 +99,39 @@ void rightMotorTask(void *p) {
 			//bit 6 indicates forward turn for right wheel
 			digitalWrite(11, HIGH);
 			digitalWrite(3, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 12 + onPeriod);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 - onPeriod);
 			digitalWrite(11, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 + onPeriod));
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 - onPeriod));
 		} else {
 			//bit 6 indicates backward turn for right wheel
 			digitalWrite(11, LOW);
 			digitalWrite(3, HIGH);
-			vTaskDelayUntil(&xLastWakeUpTime, 12 - onPeriod);
+			vTaskDelayUntil(&xLastWakeUpTime, 12 + onPeriod);
 			digitalWrite(3, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 - onPeriod));
+			vTaskDelayUntil(&xLastWakeUpTime, 20 - (12 + onPeriod));
 		}
 	}
 }
 
 void ledTask(void *p) {
-	TickType_t xLastWakeTime = xTaskGetTickCount();
+
+	for (int x = 0; x < 2; x++) {
+		//First connection
+		digitalWrite(LATCH_PIN, LOW);
+		shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 255);
+		digitalWrite(LATCH_PIN, HIGH);
+		vTaskDelay(200);
+		digitalWrite(LATCH_PIN, LOW);
+		shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
+		digitalWrite(LATCH_PIN, HIGH);
+		vTaskDelay(200);
+	}
+
 	int numberToDisplay = 1;
 	char output;
 	int move = 0;
+	TickType_t xLastWakeTime = xTaskGetTickCount();
+
 	for (;;) {
 		if (xQueueReceive(ledQueue, &output, 0) == pdTRUE) {
 			move = output & B00100000;
@@ -183,12 +203,12 @@ void setup() {
 	//right motor
 	pinMode(11, OUTPUT);
 	pinMode(3, OUTPUT);
-	rightMotorQueue = xQueueCreate(10, sizeof(char));
+	rightMotorQueue = xQueueCreate(5, sizeof(char));
 
 	//left motor
 	pinMode(5, OUTPUT);
 	pinMode(6, OUTPUT);
-	leftMotorQueue = xQueueCreate(10, sizeof(char));
+	leftMotorQueue = xQueueCreate(5, sizeof(char));
 
 	//shift register(green led)
 	pinMode(LATCH_PIN, OUTPUT);
@@ -197,22 +217,25 @@ void setup() {
 
 	//red led
 	pinMode(REAR_LED_PIN, OUTPUT);
-	ledQueue = xQueueCreate(10, sizeof(char));
+	ledQueue = xQueueCreate(5, sizeof(char));
 
 	//tone
+	audioQueue = xQueueCreate(5, sizeof(char));
 	pinMode(AUDIO_PIN, OUTPUT);
-	audioQueue = xQueueCreate(10, sizeof(char));
 }
 
 void loop() {
-	xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
-	xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
+	if (Serial.available()) {
+		xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
+		xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
 
-	xTaskCreate(serialTask, "serial", STACK_SIZE, NULL, 2, NULL);
+		xTaskCreate(serialTask, "serial", STACK_SIZE, NULL, 1, NULL);
 
-	xTaskCreate(ledTask, "led", STACK_SIZE, NULL, 3, NULL);
+		xTaskCreate(ledTask, "led", STACK_SIZE, NULL, 3, NULL);
 
-	xTaskCreate(audioTask, "audio", STACK_SIZE, NULL, 1, NULL);
+		xTaskCreate(audioTask, "audio", STACK_SIZE, NULL, 2, NULL);
 
-	vTaskStartScheduler();
+		vTaskStartScheduler();
+		while (1);
+	}
 }
