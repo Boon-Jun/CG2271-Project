@@ -28,50 +28,6 @@ void audio2Task(void *p) {
 	}
 }
 
-void serialTask(void *p) {
-	char output = 0;
-	int move = 1, completed = 0;
-	TickType_t xLastWakeUpTime = 0;
-	TaskHandle_t stopLedHandler, moveLedHandler, babySharkHandler,
-			completeSoundHandler;
-	xTaskCreate(moveLedTask, "moveLed", STACK_SIZE, NULL, 2, &moveLedHandler);
-	xTaskCreate(stopLedTask, "stopLed", 50, NULL, 2, &stopLedHandler);
-	xTaskCreate(babySharkTask, "babyShark", STACK_SIZE, NULL, 1,
-			&babySharkHandler);
-	xTaskCreate(completeAudioTask, "complete", 50, NULL, 1,
-			&completeSoundHandler);
-	xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
-	xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
-	for (;;) {
-		if (Serial.available()) {
-			output = Serial.read();
-			if (move != output & B00100000) {
-				move = output & B00100000;
-				if (move) {
-					vTaskSuspend(stopLedHandler);
-					vTaskResume(moveLedHandler);
-				} else {
-					vTaskSuspend(moveLedHandler);
-					vTaskResume(stopLedHandler);
-				}
-			}
-			if (completed != output & B00010000) {
-				completed = output & B00010000;
-				if (completed) {
-					vTaskSuspend(babySharkTask);
-					vTaskResume(stopLedHandler);
-				} else {
-					vTaskSuspend(babySharkTask);
-					vTaskResume(completeSoundHandler);
-				}
-			}
-			xQueueOverwrite(leftMotorQueue, &output);
-			xQueueOverwrite(rightMotorQueue, &output);
-		}
-		vTaskDelayUntil(&xLastWakeUpTime, 50);
-	}
-}
-
 void leftMotorTask(void *p) {
 	int offset = 0;
 	char output = 0;
@@ -160,7 +116,6 @@ void stopLedTask(void *p) {
 		vTaskDelay(200);
 	}
 
-	int numberToDisplay = 1;
 	for (;;) {
 		digitalWrite(LATCH_PIN, LOW);
 		shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 255);
@@ -237,6 +192,50 @@ void completeAudioTask(void *p) {
 	}
 }
 
+void serialTask(void *p) {
+	char output = 0;
+	int move = 1, completed = 0;
+	TickType_t xLastWakeUpTime = 0;
+	TaskHandle_t stopLedHandler, moveLedHandler, babySharkHandler,
+			completeSoundHandler;
+	xTaskCreate(moveLedTask, "moveLed", STACK_SIZE, NULL, 2, &moveLedHandler);
+	xTaskCreate(stopLedTask, "stopLed", 50, NULL, 2, &stopLedHandler);
+	xTaskCreate(babySharkTask, "babyShark", STACK_SIZE, NULL, 1,
+			&babySharkHandler);
+	xTaskCreate(completeAudioTask, "complete", 50, NULL, 1,
+			&completeSoundHandler);
+	xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
+	xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
+	for (;;) {
+		if (Serial.available()) {
+			output = Serial.read();
+			if (move != (output & B00100000)) {
+				move = output & B00100000;
+				if (move) {
+					vTaskSuspend(stopLedHandler);
+					vTaskResume(moveLedHandler);
+				} else {
+					vTaskSuspend(moveLedHandler);
+					vTaskResume(stopLedHandler);
+				}
+			}
+			if (completed != (output & B00010000)) {
+				completed = output & B00010000;
+				if (completed) {
+					vTaskSuspend(babySharkHandler);
+					vTaskResume(stopLedHandler);
+				} else {
+					vTaskSuspend(babySharkHandler);
+					vTaskResume(completeSoundHandler);
+				}
+			}
+			xQueueOverwrite(leftMotorQueue, &output);
+			xQueueOverwrite(rightMotorQueue, &output);
+		}
+		vTaskDelayUntil(&xLastWakeUpTime, 50);
+	}
+}
+
 void setup() {
 	Serial.begin(9600);
 //right motor
@@ -263,6 +262,7 @@ void setup() {
 //tone
 	pinMode(BUZZER_PIN, OUTPUT);
 }
+
 
 void loop() {
 	if (Serial) {
