@@ -164,11 +164,11 @@ void babySharkTask(void *p) {
 			tone(BUZZER_PIN, 330, 200);
 			vTaskDelay(300);
 
-			for (int k = 0; k < 3; k++) {
+			for (int j = 0; j < 3; j++) {
 				tone(BUZZER_PIN, 392, 200);
 				vTaskDelay(300);
 			}
-			for (int j = 0; j < 2; j++) {
+			for (int k = 0; k < 2; k++) {
 				tone(BUZZER_PIN, 392, 200);
 				vTaskDelay(210);
 				tone(BUZZER_PIN, 392, 200);
@@ -194,7 +194,7 @@ void completeAudioTask(void *p) {
 
 void serialTask(void *p) {
 	char output = 0;
-	int move = 1, completed = 0;
+	int move = 1, completed = 1;
 	TickType_t xLastWakeUpTime = 0;
 	TaskHandle_t stopLedHandler, moveLedHandler, babySharkHandler,
 			completeSoundHandler;
@@ -223,10 +223,10 @@ void serialTask(void *p) {
 				completed = output & B00010000;
 				if (completed) {
 					vTaskSuspend(babySharkHandler);
-					vTaskResume(stopLedHandler);
-				} else {
-					vTaskSuspend(babySharkHandler);
 					vTaskResume(completeSoundHandler);
+				} else {
+					vTaskSuspend(completeSoundHandler);
+					vTaskResume(babySharkHandler);
 				}
 			}
 			xQueueOverwrite(leftMotorQueue, &output);
