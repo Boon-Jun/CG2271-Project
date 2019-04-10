@@ -20,13 +20,13 @@
 QueueHandle_t leftMotorQueue = NULL;
 QueueHandle_t rightMotorQueue = NULL;
 
-void audio2Task(void *p) {
-	TickType_t xLastWakeTime = xTaskGetTickCount();
-	while (1) {
-		tone(BUZZER_PIN, 392, 10000);
-		vTaskDelayUntil(&xLastWakeTime, 10000);
-	}
-}
+//void audio2Task(void *p) {
+//	TickType_t xLastWakeTime = xTaskGetTickCount();
+//	while (1) {
+//		tone(BUZZER_PIN, 392, 10000);
+//		vTaskDelayUntil(&xLastWakeTime, 10000);
+//	}
+//}
 
 void leftMotorTask(void *p) {
 	int offset = 0;
@@ -152,6 +152,19 @@ void moveLedTask(void *p) {
 }
 
 void babySharkTask(void *p) {
+	//	//indicate first connection
+	//	tone(BUZZER_PIN, 2349, 200);
+	//	vTaskDelay(300);
+	//	tone(BUZZER_PIN, 1760, 200);
+	//	vTaskDelay(250);
+	//	tone(BUZZER_PIN, 1568, 200);
+	//	vTaskDelay(250);
+	//	tone(BUZZER_PIN, 1174, 200);
+	//	vTaskDelay(250);
+	//	tone(BUZZER_PIN, 2349, 200);
+	//	vTaskDelay(250);
+	//	tone(BUZZER_PIN, 1760, 200);
+	//	vTaskDelay(600);
 	for (int i = 0; i < 3; i++) {
 		//indicate first connection
 		tone(BUZZER_PIN, 330, 500);
@@ -180,12 +193,22 @@ void babySharkTask(void *p) {
 		vTaskDelay(300);
 		tone(BUZZER_PIN, 392, 200);
 		vTaskDelay(300);
-		tone(BUZZER_PIN, 349, 200);
+		tone(BUZZER_PIN, 369, 200);
 		vTaskDelay(2000);
 	}
 }
 
 void completeAudioTask(void *p) {
+	//	for (;;) {
+	//		tone(BUZZER_PIN, 3135, 200);
+	//		vTaskDelay(250);
+	//		tone(BUZZER_PIN, 2349, 200);
+	//		vTaskDelay(250);
+	//		tone(BUZZER_PIN, 1568, 200);
+	//		vTaskDelay(250);
+	//		tone(BUZZER_PIN, 1760, 200);
+	//		vTaskDelay(2000);
+	//	}
 	for (;;) {
 		tone(BUZZER_PIN, 392, 500);
 		vTaskDelay(600);
@@ -238,17 +261,17 @@ void serialTask(void *p) {
 
 void setup() {
 	Serial.begin(9600);
-//right motor
+	//right motor
 	pinMode(11, OUTPUT);
 	pinMode(3, OUTPUT);
 	rightMotorQueue = xQueueCreate(1, sizeof(char));
 
-//left motor
+	//left motor
 	pinMode(5, OUTPUT);
 	pinMode(6, OUTPUT);
 	leftMotorQueue = xQueueCreate(1, sizeof(char));
 
-//shift register(green led)
+	//shift register(green led)
 	pinMode(LATCH_PIN, OUTPUT);
 	pinMode(CLOCK_PIN, OUTPUT);
 	pinMode(DATA_PIN, OUTPUT);
@@ -256,10 +279,10 @@ void setup() {
 	shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
 	digitalWrite(LATCH_PIN, HIGH);
 
-//red led
+	//red led
 	pinMode(REAR_LED_PIN, OUTPUT);
 
-//tone
+	//tone
 	pinMode(BUZZER_PIN, OUTPUT);
 }
 
