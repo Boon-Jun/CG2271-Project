@@ -20,14 +20,6 @@
 QueueHandle_t leftMotorQueue = NULL;
 QueueHandle_t rightMotorQueue = NULL;
 
-//void audio2Task(void *p) {
-//	TickType_t xLastWakeTime = xTaskGetTickCount();
-//	while (1) {
-//		tone(BUZZER_PIN, 392, 10000);
-//		vTaskDelayUntil(&xLastWakeTime, 10000);
-//	}
-//}
-
 void leftMotorTask(void *p) {
 	int offset = 0;
 	char output = 0;
@@ -152,24 +144,20 @@ void moveLedTask(void *p) {
 }
 
 void babySharkTask(void *p) {
-	//	//indicate first connection
-	//	tone(BUZZER_PIN, 2349, 200);
-	//	vTaskDelay(300);
-	//	tone(BUZZER_PIN, 1760, 200);
-	//	vTaskDelay(250);
-	//	tone(BUZZER_PIN, 1568, 200);
-	//	vTaskDelay(250);
-	//	tone(BUZZER_PIN, 1174, 200);
-	//	vTaskDelay(250);
-	//	tone(BUZZER_PIN, 2349, 200);
-	//	vTaskDelay(250);
-	//	tone(BUZZER_PIN, 1760, 200);
-	//	vTaskDelay(600);
-	for (int i = 0; i < 3; i++) {
-		//indicate first connection
-		tone(BUZZER_PIN, 330, 500);
-		vTaskDelay(600);
-	}
+	//indicate first connection
+	tone(BUZZER_PIN, 2349, 200);
+	vTaskDelay(300);
+	tone(BUZZER_PIN, 1760, 200);
+	vTaskDelay(250);
+	tone(BUZZER_PIN, 1568, 200);
+	vTaskDelay(250);
+	tone(BUZZER_PIN, 1174, 200);
+	vTaskDelay(250);
+	tone(BUZZER_PIN, 2349, 200);
+	vTaskDelay(250);
+	tone(BUZZER_PIN, 1760, 200);
+	vTaskDelay(600);
+
 	for (;;) {
 		for (int i = 0; i < 3; i++) {
 			tone(BUZZER_PIN, 294, 200);
@@ -199,19 +187,15 @@ void babySharkTask(void *p) {
 }
 
 void completeAudioTask(void *p) {
-	//	for (;;) {
-	//		tone(BUZZER_PIN, 3135, 200);
-	//		vTaskDelay(250);
-	//		tone(BUZZER_PIN, 2349, 200);
-	//		vTaskDelay(250);
-	//		tone(BUZZER_PIN, 1568, 200);
-	//		vTaskDelay(250);
-	//		tone(BUZZER_PIN, 1760, 200);
-	//		vTaskDelay(2000);
-	//	}
 	for (;;) {
-		tone(BUZZER_PIN, 392, 500);
-		vTaskDelay(600);
+		tone(BUZZER_PIN, 3135, 200);
+		vTaskDelay(250);
+		tone(BUZZER_PIN, 2349, 200);
+		vTaskDelay(250);
+		tone(BUZZER_PIN, 1568, 200);
+		vTaskDelay(250);
+		tone(BUZZER_PIN, 1760, 200);
+		vTaskDelay(2000);
 	}
 }
 
@@ -221,14 +205,21 @@ void serialTask(void *p) {
 	TickType_t xLastWakeUpTime = 0;
 	TaskHandle_t stopLedHandler, moveLedHandler, babySharkHandler,
 			completeSoundHandler;
-	xTaskCreate(moveLedTask, "moveLed", STACK_SIZE, NULL, 2, &moveLedHandler);
-	xTaskCreate(stopLedTask, "stopLed", 50, NULL, 2, &stopLedHandler);
-	xTaskCreate(babySharkTask, "babyShark", STACK_SIZE, NULL, 1,
-			&babySharkHandler);
-	xTaskCreate(completeAudioTask, "complete", 50, NULL, 1,
-			&completeSoundHandler);
-	xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
-	xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
+	for (;;) {
+		if (Serial.available()) {
+			//only create tasks when app is connected via bluetooth
+			xTaskCreate(moveLedTask, "moveLed", STACK_SIZE, NULL, 2, &moveLedHandler);
+			xTaskCreate(stopLedTask, "stopLed", 50, NULL, 2, &stopLedHandler);
+			xTaskCreate(babySharkTask, "babyShark", STACK_SIZE, NULL, 1,
+					&babySharkHandler);
+			xTaskCreate(completeAudioTask, "complete", STACK_SIZE, NULL, 1,
+					&completeSoundHandler);
+			xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
+			xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
+			break;
+		}
+	}
+
 	for (;;) {
 		if (Serial.available()) {
 			output = Serial.read();
