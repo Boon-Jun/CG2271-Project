@@ -25,14 +25,17 @@ void leftMotorTask(void *p) {
 	char output = 0;
 	int move = 0;
 	int direction = 0;
+	int maxPWM = 20;
 	TickType_t xLastWakeUpTime = 0;
 
 	for (;;) {
 		if (xQueueReceive(leftMotorQueue, &output, 0) == pdTRUE) {
 			offset = (output & B00001111) - 7;
-			if (offset > 0) offset = 0;
+			if (offset == -7) offset = -8;
+			offset = (int)(offset * 20/8.0);
 			move = output & B00100000;
 			direction = (output & B10000000);
+			maxPWM = (output & B01000000) != (output & 10000000) ? 16:20;
 		}
 		if (!move) {
 			//bit 5 indicates no movement
@@ -43,16 +46,16 @@ void leftMotorTask(void *p) {
 			//bit 7 indicates forward turn for left wheel
 			digitalWrite(5, LOW);
 			digitalWrite(6, HIGH);
-			vTaskDelayUntil(&xLastWakeUpTime, 8 + offset);
+			vTaskDelayUntil(&xLastWakeUpTime, (maxPWM + offset > maxPWM) ? maxPWM :(maxPWM + offset < 0)? 0 : (maxPWM + offset));
 			digitalWrite(6, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (8 + offset));
+			vTaskDelayUntil(&xLastWakeUpTime, (maxPWM + offset > maxPWM) ? 0 :(maxPWM + offset < 0)? 20 - maxPWM : 20 - (maxPWM + offset));
 		} else {
 			//bit 7 indicates backward turn for left wheel
 			digitalWrite(5, HIGH);
 			digitalWrite(6, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 8 + offset);
+			vTaskDelayUntil(&xLastWakeUpTime, (maxPWM + offset > maxPWM) ? maxPWM :(maxPWM + offset < 0)? 0 : (maxPWM + offset));
 			digitalWrite(5, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (8 + offset));
+			vTaskDelayUntil(&xLastWakeUpTime, (maxPWM + offset > maxPWM) ? 0 :(maxPWM + offset < 0)? 20 - maxPWM : 20 - (maxPWM+ offset));
 		}
 	}
 }
@@ -60,6 +63,7 @@ void leftMotorTask(void *p) {
 void rightMotorTask(void *p) {
 	int offset = 0;
 	int direction = 0;
+	int maxPWM = 0;
 	int move = 0;
 	char output;
 	TickType_t xLastWakeUpTime = 0;
@@ -67,9 +71,11 @@ void rightMotorTask(void *p) {
 	for (;;) {
 		if (xQueueReceive(rightMotorQueue, &output, 0) == pdTRUE) {
 			offset = (output & B00001111) - 7;
-			if (offset < 0) offset = 0;
+			if (offset == -7) offset = -8;
+			offset = (int)(offset * 20/8.0);
 			move = output & B00100000;
 			direction = (output & B01000000);
+			maxPWM = (output & B01000000) != (output & 10000000)? 16:20;
 		}
 		if (!move) {
 			//bit 5 indicates no movement
@@ -80,16 +86,16 @@ void rightMotorTask(void *p) {
 			//bit 6 indicates forward turn for right wheel
 			digitalWrite(11, HIGH);
 			digitalWrite(3, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 8 - offset);
+			vTaskDelayUntil(&xLastWakeUpTime,  (maxPWM - offset > maxPWM) ? maxPWM :(maxPWM - offset < 0)? 0 : (maxPWM - offset));
 			digitalWrite(11, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (8 - offset));
+			vTaskDelayUntil(&xLastWakeUpTime, (maxPWM - offset > maxPWM) ? 0 :(maxPWM - offset < 0)? 20 - maxPWM : 20 - (maxPWM - offset));
 		} else {
 			//bit 6 indicates backward turn for right wheel
 			digitalWrite(11, LOW);
 			digitalWrite(3, HIGH);
-			vTaskDelayUntil(&xLastWakeUpTime, 8 - offset);
+			vTaskDelayUntil(&xLastWakeUpTime,  (maxPWM - offset > maxPWM) ? maxPWM :(maxPWM - offset < 0)? 0 : (maxPWM - offset));
 			digitalWrite(3, LOW);
-			vTaskDelayUntil(&xLastWakeUpTime, 20 - (8 - offset));
+			vTaskDelayUntil(&xLastWakeUpTime, (maxPWM - offset > maxPWM) ? 0 :(maxPWM - offset < 0)? 20 - maxPWM : 20 - (maxPWM - offset));
 		}
 	}
 }
@@ -246,7 +252,7 @@ void serialTask(void *p) {
 			xQueueOverwrite(leftMotorQueue, &output);
 			xQueueOverwrite(rightMotorQueue, &output);
 		}
-		vTaskDelayUntil(&xLastWakeUpTime, 50);
+		vTaskDelayUntil(&xLastWakeUpTime, 20);
 	}
 }
 
@@ -279,9 +285,9 @@ void setup() {
 
 
 void loop() {
-	if (Serial) {
+	//if (Serial) {
 		xTaskCreate(serialTask, "serial", STACK_SIZE, NULL, 5, NULL);
 		vTaskStartScheduler();
-		while (1);
-	}
+		//while (1);
+	//}
 }
