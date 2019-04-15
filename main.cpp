@@ -26,7 +26,7 @@ void leftMotorTask(void *p) {
 	int move = 0;
 	int direction = 0;
 	int maxPWM = 20;
-	TickType_t xLastWakeUpTime = 0;
+	TickType_t xLastWakeUpTime = xTaskGetTickCount();
 
 	for (;;) {
 		if (xQueueReceive(leftMotorQueue, &output, 0) == pdTRUE) {
@@ -35,7 +35,7 @@ void leftMotorTask(void *p) {
 			offset = (int)(offset * 20/8.0);
 			move = output & B00100000;
 			direction = (output & B10000000);
-			maxPWM = (output & B01000000) != (output & 10000000) ? 16:20;
+			maxPWM = (output & B01000000) != (output & 10000000) ? 18:20;
 		}
 		if (!move) {
 			//bit 5 indicates no movement
@@ -66,7 +66,7 @@ void rightMotorTask(void *p) {
 	int maxPWM = 0;
 	int move = 0;
 	char output;
-	TickType_t xLastWakeUpTime = 0;
+	TickType_t xLastWakeUpTime = xTaskGetTickCount();
 
 	for (;;) {
 		if (xQueueReceive(rightMotorQueue, &output, 0) == pdTRUE) {
@@ -75,7 +75,7 @@ void rightMotorTask(void *p) {
 			offset = (int)(offset * 20/8.0);
 			move = output & B00100000;
 			direction = (output & B01000000);
-			maxPWM = (output & B01000000) != (output & 10000000)? 16:20;
+			maxPWM = (output & B01000000) != (output & 10000000)? 18:20;
 		}
 		if (!move) {
 			//bit 5 indicates no movement
@@ -208,7 +208,7 @@ void completeAudioTask(void *p) {
 void serialTask(void *p) {
 	char output = 0;
 	int move = 1, completed = 1;
-	TickType_t xLastWakeUpTime = 0;
+	TickType_t xLastWakeUpTime = xTaskGetTickCount();
 	TaskHandle_t stopLedHandler, moveLedHandler, babySharkHandler,
 			completeSoundHandler;
 	for (;;) {
@@ -252,7 +252,7 @@ void serialTask(void *p) {
 			xQueueOverwrite(leftMotorQueue, &output);
 			xQueueOverwrite(rightMotorQueue, &output);
 		}
-		vTaskDelayUntil(&xLastWakeUpTime, 20);
+		vTaskDelayUntil(&xLastWakeUpTime, 10);
 	}
 }
 
