@@ -223,8 +223,8 @@ void serialTask(void *p) {
 			xTaskCreate(stopLedTask, "stopLed", 50, NULL, 2, &stopLedHandler);
 			xTaskCreate(babySharkTask, "babyShark", STACK_SIZE, NULL, 1, &babySharkHandler);
 			xTaskCreate(completeAudioTask, "complete", STACK_SIZE, NULL, 1, &completeSoundHandler);
-			xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 4, NULL);
-			xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 4, NULL);
+			xTaskCreate(leftMotorTask, "left", STACK_SIZE, NULL, 3, NULL);
+			xTaskCreate(rightMotorTask, "right", STACK_SIZE, NULL, 3, NULL);
 			break;
 		}
 	}
@@ -289,6 +289,6 @@ void setup() {
 
 
 void loop() {
-	xTaskCreate(serialTask, "serial", STACK_SIZE, NULL, 5, NULL);
+	xTaskCreate(serialTask, "serial", STACK_SIZE, NULL, 4, NULL);
 	vTaskStartScheduler();
 }
